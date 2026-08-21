@@ -16,15 +16,16 @@ import urllib.parse
 
 from bs4 import BeautifulSoup
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-# Set up clean, structured logging
+# Set up clean logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 
-# Devcontainer paths relative to the repo root
 DEVCONTAINER_PATHS = [
     ".devcontainer/devcontainer.json",
     ".devcontainer.json",
@@ -33,10 +34,21 @@ DEVCONTAINER_PATHS = [
 
 class DevcontainerScanner:
     def __init__(self, token: str = None):
-        """Initialize GitHub client session with mandatory authentication headers."""
+        """Initialize GitHub client session with retries and SSL resilience."""
         self.token = token or os.environ.get("GITHUB_TOKEN")
         self.session = requests.Session()
-        
+
+        # Mount robust retry adapter to survive transient SSL & network drops
+        retries = Retry(
+            total=3,
+            backoff_factor=1,
+            status_forcelist=[500, 502, 503, 504],
+            raise_on_status=False,
+        )
+        adapter = HTTPAdapter(max_retries=retries)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+
         headers = {
             "Accept": "application/vnd.github.v3+json",
             "User-Agent": "GDS-Devcontainer-Scanner",
@@ -69,21 +81,25 @@ class DevcontainerScanner:
         logging.info(f"Fetching repository list for organization: '{org_name}'...")
         while True:
             params = {"per_page": 100, "page": page, "type": "public"}
-            resp = self.session.get(url, params=params)
-            self._check_rate_limit(resp)
+            try:
+                resp = self.session.get(url, params=params, timeout=15)
+                self._check_rate_limit(resp)
 
-            if resp.status_code != 200:
-                logging.error(f"Failed to fetch repos for org '{org_name}': {resp.status_code}")
+                if resp.status_code != 200:
+                    logging.error(f"Failed to fetch repos for org '{org_name}': {resp.status_code}")
+                    break
+
+                data = resp.json()
+                if not data:
+                    break
+
+                for repo in data:
+                    repos.append(repo["full_name"])
+
+                page += 1
+            except requests.RequestException as e:
+                logging.error(f"Network error fetching org repos on page {page}: {e}")
                 break
-
-            data = resp.json()
-            if not data:
-                break
-
-            for repo in data:
-                repos.append(repo["full_name"])
-
-            page += 1
 
         logging.info(f"Found {len(repos)} repositories in organization '{org_name}'.")
         return repos
@@ -125,11 +141,16 @@ class DevcontainerScanner:
         """Check if any devcontainer.json configuration file exists in the target repository."""
         for path in DEVCONTAINER_PATHS:
             url = f"https://api.github.com/repos/{repo_full_name}/contents/{path}"
-            resp = self.session.get(url)
-            self._check_rate_limit(resp)
+            try:
+                resp = self.session.get(url, timeout=10)
+                self._check_rate_limit(resp)
 
-            if resp.status_code == 200:
-                return True
+                if resp.status_code == 200:
+                    return True
+            except requests.RequestException as e:
+                logging.warning(f"Transient error checking {repo_full_name} ({path}): {e}")
+                time.sleep(1)  # Brief pause on network error before proceeding
+                continue
         return False
 
 
