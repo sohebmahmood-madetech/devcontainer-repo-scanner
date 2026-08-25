@@ -1,2 +1,2 @@
-venv/
 devcontainer_audit_results.csv
+.venv

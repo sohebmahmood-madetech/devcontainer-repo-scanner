@@ -5,27 +5,33 @@ Automated Python tool designed to scan specified GitHub organizations (`alphagov
 ## Prerequisites & Installation
 
 ### Environment Setup
-Clone or create your project directory and set up a Python 3 virtual environment:
+This project uses [`uv`](https://github.com/astral-sh/uv), an extremely fast Python package and environment manager.
 
+**1. Install `uv`** (macOS via Homebrew):
 ```bash
-# Clone the repository
+brew install uv
+```
+
+**2. Clone the repository**
+```bash
 git clone https://github.com/sohebmahmood-madetech/devcontainer-repo-scanner.git
 cd devcontainer-repo-scanner
+```
 
-# Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate
+**3. Create and activate virtual environment**
+```bash
+uv venv
+source .venv/bin/activate
 ```
 
 ### Dependency Installation
 Install required packages:
 
 ```bash
-pip install requests beautifulsoup4 "urllib3<2.0.0"
+uv pip install -r requirements.txt
 ```
 
 ## Configuration
-
 Set your GitHub Personal Access Token in your terminal:
 
 ```bash
