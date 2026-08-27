@@ -1,2 +1,19 @@
-venv/
+# Audit Output
 devcontainer_audit_results.csv
+
+# Python / uv Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# OS & Editor Files
+.DS_Store
+.vscode/
+.idea/

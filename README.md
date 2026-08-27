@@ -5,44 +5,38 @@ Automated Python tool designed to scan specified GitHub organizations (`alphagov
 ## Prerequisites & Installation
 
 ### Environment Setup
-Clone or create your project directory and set up a Python 3 virtual environment:
+This project uses [`uv`](https://github.com/astral-sh/uv), an extremely fast Python package and environment manager.
 
+**1. Install `uv`** (macOS via Homebrew):
 ```bash
-# Clone the repository
-git clone https://github.com/sohebmahmood-madetech/devcontainer-repo-scanner.git
-cd devcontainer-repo-scanner
-
-# Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate
+brew install uv
 ```
 
-### Dependency Installation
-Install required packages:
-
+**2. Clone the repository**
 ```bash
-pip install requests beautifulsoup4 "urllib3<2.0.0"
+git clone https://github.com/sohebmahmood-madetech/devcontainer-repo-scanner.git
+cd devcontainer-repo-scanner
 ```
 
 ## Configuration
-
 Set your GitHub Personal Access Token in your terminal:
 
 ```bash
 export GITHUB_TOKEN="your_github_pat_here"
 ```
 
-## Running the Application
+## Setup & Running the Application
 
-Run the scanner or execute the unit test suite:
-
+**1. Run the scanner script**
 ```bash
-# Run unit tests
-python -m unittest test_find_devcontainers.py
-
-# Run the scanner script
-python find_devcontainers.py
+uv run find_devcontainers.py
 ```
+
+**2. Run the unit tests** 
+```bash
+uv run pytest
+```
+(Or run directly via standard library: uv run python test_find_devcontainers.py)
 
 ## Output & Results
 
@@ -50,3 +44,21 @@ Upon completion, the scanner automatically writes all discovered data to a CSV f
 
 * **File Name:** `devcontainer_audit_results.csv`
 * **Behavior:** Created automatically or overwritten on each script execution.
+
+## Dependency Management
+Do not use pip directly. All project dependencies are managed via uv:
+
+**1. Add a library**
+```bash
+uv add <package_name>
+```
+
+**2. Add a library with version constraints (e.g., pinning urllib3)**
+```bash
+uv add "urllib3<2.0.0"
+```
+
+**3. Add a development dependency**
+```bash
+uv add --dev pytest
+```
